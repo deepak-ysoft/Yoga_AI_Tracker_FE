@@ -73,23 +73,22 @@ const CameraPage = () => {
       setIsCameraEnabled(true);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play();
       }
-
-      setStatus({
-        isCorrect: false,
-        message: "Loading AI model...",
-      });
-
-      const det = await initDetector();
-      setDetector(det);
 
       setStatus({
         isCorrect: false,
         message: "Step into the frame to begin",
       });
+
+      const det = await initDetector();
+      setDetector(det);
+      console.log(
+        "AI Detector initialized successfully",
+      );
     } catch (err) {
       console.error(
-        "Camera detection error:",
+        "Camera/AI initialization error:",
         err,
       );
       setIsCameraEnabled(false);
@@ -115,12 +114,9 @@ const CameraPage = () => {
       ) {
         errorMessage =
           "Camera is already in use by another app or there is a hardware error.";
-      } else if (
-        err.name === "SecurityError" ||
-        err.message === "SecurityError"
-      ) {
+      } else if (err.name === "SecurityError") {
         errorMessage =
-          "Camera requires a secure HTTPS connection (standard on Vercel).";
+          "Camera requires HTTPS. Please ensure you are on a secure link.";
       } else if (
         !navigator.mediaDevices ||
         !navigator.mediaDevices.getUserMedia
