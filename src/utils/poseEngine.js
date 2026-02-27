@@ -1,3 +1,4 @@
+import * as tf from "@tensorflow/tfjs-core";
 import * as poseDetection from "@tensorflow-models/pose-detection";
 import "@tensorflow/tfjs-backend-webgl";
 
@@ -7,19 +8,32 @@ let detector = null;
 export const initDetector = async () => {
   if (detector) return detector;
 
-  const model =
-    poseDetection.SupportedModels.MoveNet;
-  const detectorConfig = {
-    modelType:
-      poseDetection.movenet.modelType
-        .SINGLEPOSE_LIGHTNING,
-  };
+  try {
+    // Explicitly set the backend to WebGL for better performance
+    await tf.setBackend("webgl");
+    await tf.ready();
 
-  detector = await poseDetection.createDetector(
-    model,
-    detectorConfig,
-  );
-  return detector;
+    const model =
+      poseDetection.SupportedModels.MoveNet;
+    const detectorConfig = {
+      modelType:
+        poseDetection.movenet.modelType
+          .SINGLEPOSE_LIGHTNING,
+      enableSmoothing: true,
+    };
+
+    detector = await poseDetection.createDetector(
+      model,
+      detectorConfig,
+    );
+    return detector;
+  } catch (error) {
+    console.error(
+      "Pose Detector Init Error:",
+      error,
+    );
+    throw error;
+  }
 };
 
 // Calculate angle between three points (A, B, C) with B as vertex
