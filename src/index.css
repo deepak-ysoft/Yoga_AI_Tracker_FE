@@ -42,15 +42,17 @@
   .glass-card:hover {
     @apply border-white/20 bg-white/5 -translate-y-1;
   }
+}
 
-  .soft-glow-primary {
-    @apply shadow-[0_0_20px_rgba(139,92,246,0.3)];
-  }
+@utility soft-glow-primary {
+  @apply shadow-[0_0_20px_rgba(139,92,246,0.3)];
+}
 
-  .soft-glow-secondary {
-    @apply shadow-[0_0_20px_rgba(16,185,129,0.2)];
-  }
+@utility soft-glow-secondary {
+  @apply shadow-[0_0_20px_rgba(16,185,129,0.2)];
+}
 
+@layer components {
   .btn-primary {
     @apply bg-primary hover:bg-primary-light px-8 py-3 rounded-2xl font-bold transition-all soft-glow-primary hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-white;
   }
