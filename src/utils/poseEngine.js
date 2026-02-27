@@ -1,6 +1,7 @@
-import * as tf from "@tensorflow/tfjs-core";
+import * as tf from "@tensorflow/tfjs";
 import * as poseDetection from "@tensorflow-models/pose-detection";
 import "@tensorflow/tfjs-backend-webgl";
+import "@tensorflow/tfjs-converter";
 
 // Initialize the detector
 let detector = null;
@@ -9,9 +10,29 @@ export const initDetector = async () => {
   if (detector) return detector;
 
   try {
-    // Explicitly set the backend to WebGL for better performance
-    await tf.setBackend("webgl");
-    await tf.ready();
+    if (!tf) {
+      console.error(
+        "TensorFlow.js core not loaded correctly",
+      );
+      throw new Error("TFCoreLoadError");
+    }
+
+    // Initialize backend
+    try {
+      const backend =
+        tf.findBackend("webgl") ? "webgl" : "cpu";
+      console.log(
+        `Setting pose detection backend to: ${backend}`,
+      );
+      await tf.setBackend(backend);
+      await tf.ready();
+    } catch (backendError) {
+      console.warn(
+        "Backend initialization failed, falling back to CPU",
+        backendError,
+      );
+      await tf.setBackend("cpu");
+    }
 
     const model =
       poseDetection.SupportedModels.MoveNet;
@@ -26,13 +47,37 @@ export const initDetector = async () => {
       model,
       detectorConfig,
     );
+    if (!detector)
+      throw new Error("DetectorCreationFailed");
+
     return detector;
   } catch (error) {
     console.error(
       "Pose Detector Init Error:",
       error,
     );
-    throw error;
+    // Ultimate fallback to CPU if anything fails during init
+    try {
+      await tf.setBackend("cpu");
+      const model =
+        poseDetection.SupportedModels.MoveNet;
+      detector =
+        await poseDetection.createDetector(
+          model,
+          {
+            modelType:
+              poseDetection.movenet.modelType
+                .SINGLEPOSE_LIGHTNING,
+          },
+        );
+      return detector;
+    } catch (innerError) {
+      console.error(
+        "Critical: All AI fallbacks failed",
+        innerError,
+      );
+      throw innerError;
+    }
   }
 };
 
@@ -64,7 +109,7 @@ export const validatePose = (
 
   const kp = {};
   keypoints.forEach((k) => {
-    if (k.score > 0.3) kp[k.name] = k;
+    if (k.score > 0.2) kp[k.name] = k;
   });
 
   if (poseType === "tree") {

@@ -73,16 +73,40 @@ const CameraPage = () => {
       setIsCameraEnabled(true);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        // Wait for video to be ready before proceeding
+        if (videoRef.current.readyState >= 1) {
+          videoRef.current
+            .play()
+            .catch(console.error);
+        } else {
+          await new Promise((resolve) => {
+            videoRef.current.onloadedmetadata =
+              () => {
+                videoRef.current
+                  .play()
+                  .catch(console.error);
+                resolve();
+              };
+          });
+        }
       }
+
+      setStatus({
+        isCorrect: false,
+        message: "Initializing AI Engine...",
+      });
+
+      const det = await initDetector();
+      if (!det)
+        throw new Error(
+          "AI_DETECTOR_INIT_FAILED",
+        );
+      setDetector(det);
 
       setStatus({
         isCorrect: false,
         message: "Step into the frame to begin",
       });
-
-      const det = await initDetector();
-      setDetector(det);
       console.log(
         "AI Detector initialized successfully",
       );
@@ -376,6 +400,8 @@ const CameraPage = () => {
                   autoPlay
                   playsInline
                   muted
+                  width="1280"
+                  height="720"
                   className="absolute inset-0 w-full h-full object-cover opacity-80"
                 />
                 <canvas
