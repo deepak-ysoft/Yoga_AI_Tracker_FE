@@ -44,36 +44,49 @@ const CameraPage = () => {
     useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (!isCameraEnabled) return;
-
-    const setup = async () => {
-      try {
-        setStatus({
-          isCorrect: false,
-          message: "Requesting camera...",
-        });
-        const stream =
-          await navigator.mediaDevices.getUserMedia(
-            { video: true },
-          );
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-        const det = await initDetector();
-        setDetector(det);
-        setStatus({
-          isCorrect: false,
-          message: "Step into the frame to begin",
-        });
-      } catch (err) {
+  const handleEnableCamera = async () => {
+    try {
+      setIsCameraEnabled(true);
+      setStatus({
+        isCorrect: false,
+        message: "Requesting camera...",
+      });
+      const stream =
+        await navigator.mediaDevices.getUserMedia(
+          {
+            video: true,
+          },
+        );
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      const det = await initDetector();
+      setDetector(det);
+      setStatus({
+        isCorrect: false,
+        message: "Step into the frame to begin",
+      });
+    } catch (err) {
+      console.error(
+        "Camera detection error:",
+        err,
+      );
+      if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ) {
+        setError(
+          "Your browser or device does not support camera access in this context (HTTPS is usually required).",
+        );
+      } else {
         setError(
           "Camera access denied. Please enable camera permissions in your browser settings and try again.",
         );
       }
-    };
-    setup();
+    }
+  };
 
+  useEffect(() => {
     return () => {
       if (videoRef.current?.srcObject) {
         videoRef.current.srcObject
@@ -81,7 +94,7 @@ const CameraPage = () => {
           .forEach((track) => track.stop());
       }
     };
-  }, [isCameraEnabled]);
+  }, []);
 
   useEffect(() => {
     let interval;
@@ -229,15 +242,21 @@ const CameraPage = () => {
             }`}
           >
             {!isCameraEnabled ?
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center space-y-8 bg-dark/40 backdrop-blur-sm">
-                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary soft-glow-primary border border-primary/20">
-                  <Camera size={48} />
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 sm:p-12 text-center space-y-4 sm:space-y-8 bg-dark/40 backdrop-blur-sm">
+                <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary soft-glow-primary border border-primary/20">
+                  <Camera
+                    size={
+                      window.innerWidth < 640 ?
+                        32
+                      : 48
+                    }
+                  />
                 </div>
-                <div className="space-y-3">
-                  <h3 className="text-3xl font-bold text-white">
+                <div className="space-y-2 sm:space-y-3">
+                  <h3 className="text-xl sm:text-3xl font-bold text-white">
                     Camera Access Required
                   </h3>
-                  <p className="text-gray-400 max-w-sm mx-auto text-lg">
+                  <p className="text-sm sm:text-lg text-gray-400 max-w-sm mx-auto">
                     To track your yoga pose in
                     real-time, we need access to
                     your camera. No data is stored
@@ -245,10 +264,8 @@ const CameraPage = () => {
                   </p>
                 </div>
                 <button
-                  onClick={() =>
-                    setIsCameraEnabled(true)
-                  }
-                  className="btn-primary px-12 py-5 text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                  onClick={handleEnableCamera}
+                  className="btn-primary px-8 py-3 sm:px-12 sm:py-5 text-sm sm:text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all"
                 >
                   Enable Camera
                 </button>
