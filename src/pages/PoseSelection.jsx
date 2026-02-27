@@ -1,5 +1,10 @@
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Sparkles, Trophy } from "lucide-react";
+import {
+  Sparkles,
+  Trophy,
+  Play,
+} from "lucide-react";
 
 const POSES = [
   {

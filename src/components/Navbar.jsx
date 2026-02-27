@@ -12,6 +12,10 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import {
+  motion,
+  AnimatePresence,
+} from "framer-motion";
 
 const Navbar = () => {
   const { user, logout } = useAuth();

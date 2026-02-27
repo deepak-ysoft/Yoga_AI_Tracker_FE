@@ -4,6 +4,7 @@ import {
 } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
+import { motion } from "framer-motion";
 
 export const ProtectedRoute = () => {
   const { token, loading } = useAuth();
