@@ -184,22 +184,32 @@ const CameraPage = () => {
   };
 
   const detect = async () => {
-    if (
-      detector &&
-      videoRef.current &&
-      videoRef.current.readyState === 4
-    ) {
-      const poses = await detector.estimatePoses(
-        videoRef.current,
-      );
-      const validation = validatePose(
-        poses[0]?.keypoints,
-        poseId,
-      );
+    if (!detector || !videoRef.current) {
+      requestAnimationFrame(detect);
+      return;
+    }
 
-      setStatus(validation);
-      setIsHolding(validation.isCorrect);
+    if (videoRef.current.readyState < 2) {
+      // Still waiting for video to have even basic metadata
+      requestAnimationFrame(detect);
+      return;
+    }
 
+    const poses = await detector.estimatePoses(
+      videoRef.current,
+      {
+        flipHorizontal: false,
+      },
+    );
+
+    const validation = validatePose(
+      poses[0]?.keypoints,
+      poseId,
+    );
+    setStatus(validation);
+    setIsHolding(validation.isCorrect);
+
+    if (canvasRef.current) {
       const ctx =
         canvasRef.current.getContext("2d");
       ctx.clearRect(
@@ -211,7 +221,8 @@ const CameraPage = () => {
 
       if (poses[0]?.keypoints) {
         poses[0].keypoints.forEach((kp) => {
-          if (kp.score > 0.3) {
+          // Lowered confidence to 0.2 for mobile consistency
+          if (kp.score > 0.2) {
             ctx.beginPath();
             ctx.arc(
               kp.x,
@@ -232,13 +243,20 @@ const CameraPage = () => {
         });
       }
     }
+
     requestAnimationFrame(detect);
   };
 
   useEffect(() => {
+    let animationFrame;
     if (detector) {
-      detect();
+      animationFrame =
+        requestAnimationFrame(detect);
     }
+    return () => {
+      if (animationFrame)
+        cancelAnimationFrame(animationFrame);
+    };
   }, [detector]);
 
   return (
