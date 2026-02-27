@@ -33,9 +33,11 @@ const CameraPage = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [detector, setDetector] = useState(null);
+  const [isCameraEnabled, setIsCameraEnabled] =
+    useState(false);
   const [status, setStatus] = useState({
     isCorrect: false,
-    message: "Initialising camera...",
+    message: "Waiting for camera...",
   });
   const [holdTime, setHoldTime] = useState(0);
   const [isHolding, setIsHolding] =
@@ -43,8 +45,14 @@ const CameraPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!isCameraEnabled) return;
+
     const setup = async () => {
       try {
+        setStatus({
+          isCorrect: false,
+          message: "Requesting camera...",
+        });
         const stream =
           await navigator.mediaDevices.getUserMedia(
             { video: true },
@@ -60,7 +68,7 @@ const CameraPage = () => {
         });
       } catch (err) {
         setError(
-          "Camera access denied. Please enable camera permissions.",
+          "Camera access denied. Please enable camera permissions in your browser settings and try again.",
         );
       }
     };
@@ -73,7 +81,7 @@ const CameraPage = () => {
           .forEach((track) => track.stop());
       }
     };
-  }, []);
+  }, [isCameraEnabled]);
 
   useEffect(() => {
     let interval;
@@ -171,29 +179,30 @@ const CameraPage = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="max-w-5xl mx-auto space-y-8"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-7xl mx-auto space-y-8 px-4"
     >
       <div className="flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary soft-glow-primary">
-            <Activity size={24} />
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary soft-glow-primary border border-primary/20">
+            <Activity size={28} />
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-white capitalize tracking-tight">
+            <h2 className="text-4xl font-bold text-white capitalize tracking-tight">
               {poseId.replace("-", " ")}
             </h2>
-            <p className="text-gray-400 text-sm">
-              Perfect your form in real-time
+            <p className="text-gray-400 text-sm font-medium">
+              Maintain perfect form for max
+              accuracy
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-4 w-full md:w-auto">
-          <div className="glass-card px-8 py-3 flex items-center gap-3 text-secondary-light font-mono text-xl font-bold flex-1 md:flex-none justify-center soft-glow-secondary border-secondary/20">
+          <div className="glass-card px-10 py-4 flex items-center gap-3 text-secondary-light font-mono text-2xl font-bold flex-1 md:flex-none justify-center soft-glow-secondary border-secondary/20 min-w-[160px]">
             <Clock
-              size={24}
+              size={28}
               className="animate-pulse"
             />
             <span>{holdTime}s</span>
@@ -202,40 +211,72 @@ const CameraPage = () => {
             onClick={() =>
               navigate("/pose-selection")
             }
-            className="btn-secondary px-6"
+            className="btn-secondary px-8 py-4 text-base font-bold"
           >
             Exit
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 relative group">
-          {/* Main Camera View */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+        <div className="xl:col-span-3 relative">
+          {/* Main Camera View Container */}
           <div
-            className={`relative glass-card overflow-hidden aspect-video bg-gray-950 border-2 transition-all duration-700 ${
+            className={`relative glass-card overflow-hidden bg-gray-950 border-2 transition-all duration-700 aspect-[4/3] sm:aspect-video rounded-3xl ${
               status.isCorrect ?
-                "border-secondary/50 soft-glow-secondary scale-[1.01]"
+                "border-secondary/50 soft-glow-secondary scale-[1.005]"
               : "border-white/5"
             }`}
           >
-            {error ?
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 space-y-4 text-center">
-                <AlertCircle
-                  size={64}
-                  className="text-red-500"
-                />
-                <p className="text-red-400 font-medium">
-                  {error}
-                </p>
+            {!isCameraEnabled ?
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center space-y-8 bg-dark/40 backdrop-blur-sm">
+                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary soft-glow-primary border border-primary/20">
+                  <Camera size={48} />
+                </div>
+                <div className="space-y-3">
+                  <h3 className="text-3xl font-bold text-white">
+                    Camera Access Required
+                  </h3>
+                  <p className="text-gray-400 max-w-sm mx-auto text-lg">
+                    To track your yoga pose in
+                    real-time, we need access to
+                    your camera. No data is stored
+                    or sent to any server.
+                  </p>
+                </div>
+                <button
+                  onClick={() =>
+                    setIsCameraEnabled(true)
+                  }
+                  className="btn-primary px-12 py-5 text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                >
+                  Enable Camera
+                </button>
+              </div>
+            : error ?
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 space-y-6 text-center z-50 bg-gray-950/90 backdrop-blur-md">
+                <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20">
+                  <AlertCircle size={40} />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-red-400 font-bold text-xl uppercase tracking-wider">
+                    Access Denied
+                  </p>
+                  <p className="text-gray-400 max-w-md mx-auto">
+                    {error}
+                  </p>
+                </div>
                 <button
                   onClick={() =>
                     window.location.reload()
                   }
-                  className="btn-primary"
+                  className="btn-primary bg-red-500 hover:bg-red-600 border-red-500/50 px-8 py-4"
                 >
-                  <RefreshCw size={20} /> Try
-                  Again
+                  <RefreshCw
+                    size={22}
+                    className="mr-2"
+                  />{" "}
+                  Try Again
                 </button>
               </div>
             : <>
@@ -244,23 +285,23 @@ const CameraPage = () => {
                   autoPlay
                   playsInline
                   muted
-                  className="absolute inset-0 w-full h-full object-cover opacity-70 grayscale-[20%]"
+                  className="absolute inset-0 w-full h-full object-cover opacity-80"
                 />
                 <canvas
                   ref={canvasRef}
-                  width={640}
-                  height={480}
+                  width={1280}
+                  height={720}
                   className="absolute inset-0 w-full h-full object-cover z-10"
                 />
 
                 {/* Status Overlay */}
-                <div className="absolute bottom-10 left-0 right-0 z-20 px-10">
+                <div className="absolute bottom-10 left-0 right-0 z-20 px-4 sm:px-10">
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={status.message}
                       initial={{
                         opacity: 0,
-                        y: 20,
+                        y: 30,
                       }}
                       animate={{
                         opacity: 1,
@@ -270,52 +311,49 @@ const CameraPage = () => {
                         opacity: 0,
                         y: -20,
                       }}
-                      className={`glass-card p-6 flex items-center justify-between border-2 transition-colors duration-500 ${
+                      className={`glass-card p-8 flex items-center justify-between border-2 transition-all duration-500 rounded-3xl ${
                         status.isCorrect ?
-                          "border-secondary bg-secondary/20"
-                        : "border-primary/40 bg-dark-soft/80"
+                          "border-secondary bg-secondary/20 soft-glow-secondary shadow-2xl"
+                        : "border-primary/40 bg-dark-soft/90 backdrop-blur-xl"
                       }`}
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-6">
                         <div
-                          className={`p-3 rounded-xl ${status.isCorrect ? "bg-secondary text-white" : "bg-primary/20 text-primary"}`}
+                          className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-colors duration-500 ${status.isCorrect ? "bg-secondary text-white" : "bg-primary/20 text-primary"}`}
                         >
                           {status.isCorrect ?
                             <CheckCircle
-                              size={24}
+                              size={32}
                             />
                           : <Activity
-                              size={24}
+                              size={32}
                               className="animate-spin-slow"
                             />
                           }
                         </div>
                         <div>
-                          <p className="text-xs font-bold uppercase tracking-widest opacity-60">
-                            Status
+                          <p className="text-sm font-bold uppercase tracking-[0.2em] opacity-50 mb-1">
+                            Current Status
                           </p>
-                          <p className="text-lg font-bold text-white">
+                          <p className="text-2xl font-bold text-white">
                             {status.message}
                           </p>
                         </div>
                       </div>
 
                       {status.isCorrect && (
-                        <div className="hidden sm:flex items-center gap-2 text-secondary font-bold">
-                          <CheckCircle
-                            size={20}
-                            className="animate-bounce"
-                          />
-                          RECORDING
+                        <div className="hidden md:flex items-center gap-3 text-secondary font-black tracking-tighter text-xl">
+                          <div className="w-4 h-4 rounded-full bg-secondary animate-ping" />
+                          RECORDING SESSION
                         </div>
                       )}
                     </motion.div>
                   </AnimatePresence>
                 </div>
 
-                {/* Validation Ring Decoration */}
+                {/* Corner Decoration for correct pose */}
                 {status.isCorrect && (
-                  <div className="absolute inset-0 border-[10px] border-secondary/20 pointer-events-none animate-pulse" />
+                  <div className="absolute inset-0 border-[16px] border-secondary/10 pointer-events-none animate-pulse z-0" />
                 )}
               </>
             }
