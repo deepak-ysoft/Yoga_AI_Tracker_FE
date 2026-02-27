@@ -42,26 +42,47 @@ const CameraPage = () => {
   const [holdTime, setHoldTime] = useState(0);
   const [isHolding, setIsHolding] =
     useState(false);
+  const [isInitializing, setIsInitializing] =
+    useState(false);
   const [error, setError] = useState(null);
 
   const handleEnableCamera = async () => {
+    setError(null);
+    setIsInitializing(true);
     try {
-      setIsCameraEnabled(true);
+      if (!window.isSecureContext) {
+        throw new Error("SecurityError");
+      }
+
       setStatus({
         isCorrect: false,
-        message: "Requesting camera...",
+        message: "Requesting camera access...",
       });
+
       const stream =
         await navigator.mediaDevices.getUserMedia(
           {
-            video: true,
+            video: {
+              facingMode: "user",
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
           },
         );
+
+      setIsCameraEnabled(true);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
+
+      setStatus({
+        isCorrect: false,
+        message: "Loading AI model...",
+      });
+
       const det = await initDetector();
       setDetector(det);
+
       setStatus({
         isCorrect: false,
         message: "Step into the frame to begin",
@@ -71,18 +92,48 @@ const CameraPage = () => {
         "Camera detection error:",
         err,
       );
+      setIsCameraEnabled(false);
+
+      let errorMessage =
+        "An unexpected error occurred.";
+
       if (
+        err.name === "NotAllowedError" ||
+        err.name === "PermissionDeniedError"
+      ) {
+        errorMessage =
+          "Camera access denied. Please check your browser/phone settings to allow camera access for this site.";
+      } else if (
+        err.name === "NotFoundError" ||
+        err.name === "DevicesNotFoundError"
+      ) {
+        errorMessage =
+          "No camera found on your device.";
+      } else if (
+        err.name === "NotReadableError" ||
+        err.name === "TrackStartError"
+      ) {
+        errorMessage =
+          "Camera is already in use by another app or there is a hardware error.";
+      } else if (
+        err.name === "SecurityError" ||
+        err.message === "SecurityError"
+      ) {
+        errorMessage =
+          "Camera requires a secure HTTPS connection (standard on Vercel).";
+      } else if (
         !navigator.mediaDevices ||
         !navigator.mediaDevices.getUserMedia
       ) {
-        setError(
-          "Your browser or device does not support camera access in this context (HTTPS is usually required).",
-        );
+        errorMessage =
+          "This browser doesn't support camera access.";
       } else {
-        setError(
-          "Camera access denied. Please enable camera permissions in your browser settings and try again.",
-        );
+        errorMessage = `${err.name}: ${err.message}`;
       }
+
+      setError(errorMessage);
+    } finally {
+      setIsInitializing(false);
     }
   };
 
@@ -265,9 +316,18 @@ const CameraPage = () => {
                 </div>
                 <button
                   onClick={handleEnableCamera}
-                  className="btn-primary px-8 py-3 sm:px-12 sm:py-5 text-sm sm:text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                  disabled={isInitializing}
+                  className="btn-primary px-8 py-3 sm:px-12 sm:py-5 text-sm sm:text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Enable Camera
+                  {isInitializing ?
+                    <>
+                      <RefreshCw
+                        className="animate-spin mr-2"
+                        size={20}
+                      />
+                      Initializing...
+                    </>
+                  : "Enable Camera"}
                 </button>
               </div>
             : error ?
