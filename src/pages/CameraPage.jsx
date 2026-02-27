@@ -22,6 +22,11 @@ import {
   validatePose,
 } from "../utils/poseEngine";
 
+import {
+  motion,
+  AnimatePresence,
+} from "framer-motion";
+
 const CameraPage = () => {
   const { poseId } = useParams();
   const navigate = useNavigate();
@@ -51,7 +56,7 @@ const CameraPage = () => {
         setDetector(det);
         setStatus({
           isCorrect: false,
-          message: "Analyzing pose...",
+          message: "Step into the frame to begin",
         });
       } catch (err) {
         setError(
@@ -87,14 +92,14 @@ const CameraPage = () => {
   const saveSession = async () => {
     try {
       await axios.post(
-        "http://localhost:5000/api/sessions",
+        `${import.meta.env.VITE_API_URL}/sessions`,
         {
           poseName:
             poseId === "tree" ? "Tree Pose" : (
               "Warrior Pose"
             ),
           holdTimeSeconds: holdTime,
-          accuracyScore: 100, // Simplified for MVP
+          accuracyScore: 100,
         },
       );
       navigate("/dashboard");
@@ -123,7 +128,6 @@ const CameraPage = () => {
       setStatus(validation);
       setIsHolding(validation.isCorrect);
 
-      // Draw keypoints
       const ctx =
         canvasRef.current.getContext("2d");
       ctx.clearRect(
@@ -140,7 +144,7 @@ const CameraPage = () => {
             ctx.arc(
               kp.x,
               kp.y,
-              5,
+              6,
               0,
               2 * Math.PI,
             );
@@ -149,6 +153,9 @@ const CameraPage = () => {
                 "#8B5CF6"
               );
             ctx.fill();
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.stroke();
           }
         });
       }
@@ -163,120 +170,223 @@ const CameraPage = () => {
   }, [detector]);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold capitalize">
-          {poseId.replace("-", " ")}
-        </h2>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="max-w-5xl mx-auto space-y-8"
+    >
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-4">
-          <div className="glass-card px-4 py-2 flex items-center gap-2 text-secondary font-mono">
-            <Clock size={18} /> {holdTime}s
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary soft-glow-primary">
+            <Activity size={24} />
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold text-white capitalize tracking-tight">
+              {poseId.replace("-", " ")}
+            </h2>
+            <p className="text-gray-400 text-sm">
+              Perfect your form in real-time
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="glass-card px-8 py-3 flex items-center gap-3 text-secondary-light font-mono text-xl font-bold flex-1 md:flex-none justify-center soft-glow-secondary border-secondary/20">
+            <Clock
+              size={24}
+              className="animate-pulse"
+            />
+            <span>{holdTime}s</span>
           </div>
           <button
             onClick={() =>
               navigate("/pose-selection")
             }
-            className="text-gray-400 hover:text-white transition-colors"
+            className="btn-secondary px-6"
           >
-            Cancel
+            Exit
           </button>
         </div>
       </div>
 
-      <div className="relative glass-card overflow-hidden aspect-video bg-black flex items-center justify-center">
-        {error ?
-          <div className="text-center p-8 space-y-4">
-            <AlertCircle
-              size={48}
-              className="text-red-500 mx-auto"
-            />
-            <p className="text-red-400">
-              {error}
-            </p>
-            <button
-              onClick={() =>
-                window.location.reload()
-              }
-              className="btn-primary"
-            >
-              <RefreshCw size={18} /> Retry
-            </button>
-          </div>
-        : <>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="absolute inset-0 w-full h-full object-cover opacity-60"
-            />
-            <canvas
-              ref={canvasRef}
-              width={640}
-              height={480}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-sm px-6">
-              <div
-                className={`glass-card p-4 text-center border-2 transition-all duration-500 ${status.isCorrect ? "border-secondary bg-secondary/10" : "border-primary bg-primary/10"}`}
-              >
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  {status.isCorrect ?
-                    <CheckCircle
-                      size={20}
-                      className="text-secondary"
-                    />
-                  : <Activity
-                      size={20}
-                      className="text-primary"
-                    />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 relative group">
+          {/* Main Camera View */}
+          <div
+            className={`relative glass-card overflow-hidden aspect-video bg-gray-950 border-2 transition-all duration-700 ${
+              status.isCorrect ?
+                "border-secondary/50 soft-glow-secondary scale-[1.01]"
+              : "border-white/5"
+            }`}
+          >
+            {error ?
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 space-y-4 text-center">
+                <AlertCircle
+                  size={64}
+                  className="text-red-500"
+                />
+                <p className="text-red-400 font-medium">
+                  {error}
+                </p>
+                <button
+                  onClick={() =>
+                    window.location.reload()
                   }
-                  <span className="font-bold">
-                    {status.isCorrect ?
-                      "PERFECT FORM"
-                    : "POSE DETECTION"}
+                  className="btn-primary"
+                >
+                  <RefreshCw size={20} /> Try
+                  Again
+                </button>
+              </div>
+            : <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="absolute inset-0 w-full h-full object-cover opacity-70 grayscale-[20%]"
+                />
+                <canvas
+                  ref={canvasRef}
+                  width={640}
+                  height={480}
+                  className="absolute inset-0 w-full h-full object-cover z-10"
+                />
+
+                {/* Status Overlay */}
+                <div className="absolute bottom-10 left-0 right-0 z-20 px-10">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={status.message}
+                      initial={{
+                        opacity: 0,
+                        y: 20,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                      }}
+                      exit={{
+                        opacity: 0,
+                        y: -20,
+                      }}
+                      className={`glass-card p-6 flex items-center justify-between border-2 transition-colors duration-500 ${
+                        status.isCorrect ?
+                          "border-secondary bg-secondary/20"
+                        : "border-primary/40 bg-dark-soft/80"
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`p-3 rounded-xl ${status.isCorrect ? "bg-secondary text-white" : "bg-primary/20 text-primary"}`}
+                        >
+                          {status.isCorrect ?
+                            <CheckCircle
+                              size={24}
+                            />
+                          : <Activity
+                              size={24}
+                              className="animate-spin-slow"
+                            />
+                          }
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-widest opacity-60">
+                            Status
+                          </p>
+                          <p className="text-lg font-bold text-white">
+                            {status.message}
+                          </p>
+                        </div>
+                      </div>
+
+                      {status.isCorrect && (
+                        <div className="hidden sm:flex items-center gap-2 text-secondary font-bold">
+                          <CheckCircle
+                            size={20}
+                            className="animate-bounce"
+                          />
+                          RECORDING
+                        </div>
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                {/* Validation Ring Decoration */}
+                {status.isCorrect && (
+                  <div className="absolute inset-0 border-[10px] border-secondary/20 pointer-events-none animate-pulse" />
+                )}
+              </>
+            }
+          </div>
+        </div>
+
+        {/* Info Column */}
+        <div className="space-y-6">
+          <div className="glass-card p-8 space-y-6">
+            <h3 className="text-xl font-bold flex items-center gap-3 text-white">
+              <Target
+                size={22}
+                className="text-primary"
+              />
+              Guidelines
+            </h3>
+
+            <div className="space-y-4">
+              {[
+                {
+                  label: "Distance",
+                  desc: "Stand 2-3 meters back",
+                },
+                {
+                  label: "Visibility",
+                  desc: "Full body must be clear",
+                },
+                {
+                  label: "Lighting",
+                  desc: "Well-lit environment",
+                },
+                {
+                  label: "Stability",
+                  desc: "Hold pose for detection",
+                },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+                >
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-primary">
+                    {item.label}
+                  </span>
+                  <span className="text-sm text-gray-300">
+                    {item.desc}
                   </span>
                 </div>
-                <p className="text-sm opacity-80">
-                  {status.message}
-                </p>
-              </div>
+              ))}
             </div>
-          </>
-        }
-      </div>
 
-      <div className="glass-card p-6">
-        <h3 className="font-bold mb-2 flex items-center gap-2">
-          <Target
-            size={18}
-            className="text-primary"
-          />{" "}
-          Instructions
-        </h3>
-        <ul className="text-sm text-gray-400 list-disc list-inside space-y-1">
-          <li>
-            Stand approximately 2-3 meters away
-            from the camera.
-          </li>
-          <li>
-            Ensure your full body is visible in
-            the frame.
-          </li>
-          <li>
-            {poseId === "tree" ?
-              "Place one foot on your inner thigh and keep your balance."
-            : "Extend your arms straight and lunge forward."
-            }
-          </li>
-          <li>
-            The timer starts once your pose is
-            correctly detected.
-          </li>
-        </ul>
+            <div
+              className={`p-5 rounded-2xl border transition-colors ${
+                poseId === "tree" ?
+                  "bg-primary/5 border-primary/20"
+                : "bg-secondary/5 border-secondary/20"
+              }`}
+            >
+              <p className="text-white font-bold mb-2">
+                Pro Tip:
+              </p>
+              <p className="text-sm text-gray-400">
+                {poseId === "tree" ?
+                  "Focus on a fixed point in front of you to maintain better balance."
+                : "Keep your back leg fully extended and core engaged for stability."
+                }
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

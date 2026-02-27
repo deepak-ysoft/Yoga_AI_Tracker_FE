@@ -21,10 +21,19 @@ export const ProtectedRoute = () => {
 
 const Layout = () => {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="container mx-auto px-6 pt-24 pb-12">
-        <Outlet />
+      <main className="flex-1 pt-32 pb-12">
+        <div className="container mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.4 }}
+          >
+            <Outlet />
+          </motion.div>
+        </div>
       </main>
     </div>
   );

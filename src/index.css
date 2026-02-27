@@ -2,38 +2,86 @@
 
 @theme {
   --color-primary: #8b5cf6;
+  --color-primary-light: #a78bfa;
   --color-secondary: #10b981;
+  --color-secondary-light: #34d399;
   --color-dark: #0f172a;
-  --color-glass: rgba(255, 255, 255, 0.05);
+  --color-dark-soft: #1e293b;
+  --color-glass: rgba(255, 255, 255, 0.03);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
   --backdrop-blur-xs: 2px;
 }
 
-:root {
-  color-scheme: dark;
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-dark text-white font-sans overflow-x-hidden min-h-screen;
+    background:
+      radial-gradient(
+        circle at 0% 0%,
+        rgba(139, 92, 246, 0.15) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 100% 100%,
+        rgba(16, 185, 129, 0.1) 0%,
+        transparent 50%
+      ),
+      #020617;
+  }
 }
 
-body {
-  @apply bg-dark text-white font-sans overflow-x-hidden min-h-screen;
-  background: radial-gradient(
-    circle at top left,
-    #1e293b 0%,
-    #0f172a 50%,
-    #020617 100%
-  );
+@layer components {
+  .glass-card {
+    @apply bg-glass border border-glass-border backdrop-blur-xl rounded-3xl shadow-2xl transition-all duration-500;
+  }
+
+  .glass-card:hover {
+    @apply border-white/20 bg-white/5 -translate-y-1;
+  }
+
+  .soft-glow-primary {
+    @apply shadow-[0_0_20px_rgba(139,92,246,0.3)];
+  }
+
+  .soft-glow-secondary {
+    @apply shadow-[0_0_20px_rgba(16,185,129,0.2)];
+  }
+
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-light px-8 py-3 rounded-2xl font-bold transition-all soft-glow-primary hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-white;
+  }
+
+  .btn-secondary {
+    @apply bg-white/5 hover:bg-white/10 border border-white/10 px-8 py-3 rounded-2xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 text-white;
+  }
+
+  .input-field {
+    @apply bg-white/5 border border-white/10 rounded-2xl px-5 py-3 focus:outline-none focus:border-primary/50 focus:bg-white/10 transition-all w-full;
+  }
 }
 
-.glass-card {
-  @apply bg-glass border border-white/10 backdrop-blur-md rounded-2xl shadow-xl transition-all duration-300;
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
 
-.glass-card:hover {
-  @apply border-white/20 bg-white/10;
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
-.btn-primary {
-  @apply bg-primary hover:bg-primary/90 px-6 py-2 rounded-xl font-semibold transition-all shadow-lg hover:shadow-primary/20 flex items-center gap-2;
+.text-gradient {
+  @apply bg-gradient-to-r from-white via-white to-white/40 bg-clip-text text-transparent;
 }
 
-.input-field {
-  @apply bg-white/5 border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:border-primary transition-all;
+.text-gradient-primary {
+  @apply bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent;
 }

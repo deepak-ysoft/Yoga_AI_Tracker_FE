@@ -7,6 +7,8 @@ import {
   Calendar,
 } from "lucide-react";
 
+import { motion } from "framer-motion";
+
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [sessions, setSessions] = useState([]);
@@ -18,10 +20,10 @@ const Dashboard = () => {
         const [statsRes, sessionsRes] =
           await Promise.all([
             axios.get(
-              "http://localhost:5000/api/sessions/stats",
+              `${import.meta.env.VITE_API_URL}/sessions/stats`,
             ),
             axios.get(
-              "http://localhost:5000/api/sessions",
+              `${import.meta.env.VITE_API_URL}/sessions`,
             ),
           ]);
         setStats(statsRes.data);
@@ -38,126 +40,231 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
+  };
+
   if (loading)
     return (
-      <div className="text-center mt-20">
-        Loading Dashboard...
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Activity
+          className="text-primary animate-pulse"
+          size={40}
+        />
       </div>
     );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
-        Your Progress
-      </h1>
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-12"
+    >
+      <motion.div
+        variants={item}
+        className="flex justify-between items-end"
+      >
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold text-white">
+            Your Progress
+          </h1>
+          <p className="text-gray-400">
+            Keep up the great work, you're doing
+            amazing!
+          </p>
+        </div>
+      </motion.div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-card p-6 flex items-center gap-4">
-          <div className="p-4 bg-primary/20 rounded-2xl text-primary">
-            <Activity size={24} />
+      <motion.div
+        variants={container}
+        className="grid grid-cols-1 md:grid-cols-3 gap-8"
+      >
+        <motion.div
+          variants={item}
+          className="glass-card p-8 flex items-center gap-6 relative overflow-hidden group"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
+          <div className="p-5 bg-primary/10 rounded-2xl text-primary soft-glow-primary">
+            <Activity size={28} />
           </div>
           <div>
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-400 text-sm font-medium uppercase tracking-wider">
               Total Sessions
             </p>
-            <p className="text-2xl font-bold">
+            <p className="text-4xl font-bold mt-1">
               {stats?.totalSessions || 0}
             </p>
           </div>
-        </div>
-        <div className="glass-card p-6 flex items-center gap-4">
-          <div className="p-4 bg-secondary/20 rounded-2xl text-secondary">
-            <Clock size={24} />
+        </motion.div>
+
+        <motion.div
+          variants={item}
+          className="glass-card p-8 flex items-center gap-6 relative overflow-hidden group"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-secondary/10 transition-colors" />
+          <div className="p-5 bg-secondary/10 rounded-2xl text-secondary soft-glow-secondary">
+            <Clock size={28} />
           </div>
           <div>
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-400 text-sm font-medium uppercase tracking-wider">
               Best Hold Time
             </p>
-            <p className="text-2xl font-bold">
+            <p className="text-4xl font-bold mt-1">
               {stats?.bestHoldTime || 0}s
             </p>
           </div>
-        </div>
-        <div className="glass-card p-6 flex items-center gap-4">
-          <div className="p-4 bg-orange-500/20 rounded-2xl text-orange-500">
-            <Target size={24} />
+        </motion.div>
+
+        <motion.div
+          variants={item}
+          className="glass-card p-8 flex items-center gap-6 relative overflow-hidden group"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-orange-500/10 transition-colors" />
+          <div className="p-5 bg-orange-500/10 rounded-2xl text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
+            <Target size={28} />
           </div>
           <div>
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-400 text-sm font-medium uppercase tracking-wider">
               Avg. Accuracy
             </p>
-            <p className="text-2xl font-bold">
+            <p className="text-4xl font-bold mt-1">
               {stats?.averageAccuracy || 0}%
             </p>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Recent Sessions */}
-      <div className="glass-card overflow-hidden">
-        <div className="p-6 border-b border-white/10">
-          <h2 className="text-xl font-bold">
-            Recent Sessions
+      <motion.div
+        variants={item}
+        className="glass-card overflow-hidden"
+      >
+        <div className="px-8 py-6 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
+          <h2 className="text-xl font-bold flex items-center gap-3">
+            <Calendar
+              className="text-primary"
+              size={20}
+            />
+            Recent Activity
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-white/5 text-gray-400 text-sm">
+        <div className="overflow-x-auto scrollbar-hide">
+          <table className="w-full text-left min-w-[600px]">
+            <thead className="bg-white/[0.02] text-gray-500 text-xs uppercase tracking-widest">
               <tr>
-                <th className="px-6 py-4">
-                  Pose
+                <th className="px-8 py-5 font-semibold">
+                  Pose Name
                 </th>
-                <th className="px-6 py-4">
-                  Duration
+                <th className="px-8 py-5 font-semibold">
+                  Hold Duration
                 </th>
-                <th className="px-6 py-4">
-                  Accuracy
+                <th className="px-8 py-5 font-semibold text-center">
+                  Accuracy Score
                 </th>
-                <th className="px-6 py-4">
-                  Date
+                <th className="px-8 py-5 font-semibold text-right">
+                  Completion Date
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 font-mono text-sm">
+            <tbody className="divide-y divide-white/5 text-sm">
               {sessions.length > 0 ?
-                sessions.map((session) => (
-                  <tr
+                sessions.map((session, i) => (
+                  <motion.tr
                     key={session._id}
-                    className="hover:bg-white/5 transition-colors"
+                    initial={{
+                      opacity: 0,
+                      x: -10,
+                    }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{
+                      delay: i * 0.05 + 0.5,
+                    }}
+                    className="hover:bg-white/[0.02] transition-colors group"
                   >
-                    <td className="px-6 py-4 font-sans font-medium">
-                      {session.poseName}
+                    <td className="px-8 py-5">
+                      <span className="font-semibold text-white group-hover:text-primary transition-colors capitalize">
+                        {session.poseName.replace(
+                          "-",
+                          " ",
+                        )}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 text-secondary">
-                      {session.holdTimeSeconds}s
+                    <td className="px-8 py-5 text-gray-300">
+                      <div className="flex items-center gap-2 font-mono">
+                        <span className="text-secondary">
+                          {
+                            session.holdTimeSeconds
+                          }
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                          seconds
+                        </span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-primary">
-                      {session.accuracyScore}%
+                    <td className="px-8 py-5 text-center">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          (
+                            session.accuracyScore >
+                            80
+                          ) ?
+                            "bg-secondary/10 text-secondary"
+                          : "bg-orange-500/10 text-orange-400"
+                        }`}
+                      >
+                        {session.accuracyScore}%
+                      </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500 flex items-center gap-2">
-                      <Calendar size={14} />{" "}
+                    <td className="px-8 py-5 text-gray-400 text-right font-mono text-xs">
                       {new Date(
                         session.createdAt,
-                      ).toLocaleDateString()}
+                      ).toLocaleDateString(
+                        undefined,
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        },
+                      )}
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))
               : <tr>
                   <td
                     colSpan="4"
-                    className="px-6 py-8 text-center text-gray-500 italic"
+                    className="px-8 py-20 text-center"
                   >
-                    No sessions yet. Start your
-                    first yoga pose!
+                    <div className="flex flex-col items-center gap-4 opacity-40">
+                      <Activity size={48} />
+                      <p className="italic text-lg">
+                        No sessions recorded yet.
+                      </p>
+                      <p className="text-sm">
+                        Start your practice and
+                        see your journey here!
+                      </p>
+                    </div>
                   </td>
                 </tr>
               }
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
